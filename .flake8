@@ -1,0 +1,7 @@
+[flake8]
+max-line-length = 100
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,venv
+ignore = E203,W503,E501
+# E203: whitespace before ':' (conflicts with black)
+# W503: line break before binary operator (PEP8 now recommends opposite)
+# E501: line too long (we handle this with max-line-length)

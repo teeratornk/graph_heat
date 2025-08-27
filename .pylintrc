@@ -1,0 +1,36 @@
+[MASTER]
+init-hook='import sys; sys.path.append(".")'
+
+[MESSAGES CONTROL]
+max-line-length=100
+disable=
+    C0103,  # Invalid name (we use scientific naming conventions)
+    R0913,  # Too many arguments
+    R0914,  # Too many local variables
+    R0915,  # Too many statements
+    C0114,  # Missing module docstring
+    C0115,  # Missing class docstring
+    C0116,  # Missing function docstring (we handle this selectively)
+    W0611,  # Unused imports (for type hints)
+    R0801,  # Similar lines in files
+    R0903,  # Too few public methods
+    W0212,  # Access to protected member
+    C0302,  # Too many lines in module
+
+[DESIGN]
+max-args=7
+max-locals=20
+max-returns=6
+max-branches=15
+max-statements=60
+max-attributes=10
+min-public-methods=1
+
+[FORMAT]
+max-line-length=100
+
+[SIMILARITIES]
+min-similarity-lines=10
+
+[IMPORTS]
+known-third-party=numpy,pandas,matplotlib,seaborn,h5py,scipy
