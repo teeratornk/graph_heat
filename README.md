@@ -32,9 +32,9 @@ The HTML report (`exploration_report.html`) provides:
 </div>
 
 This visualization shows:
-- **Interior nodes** (circles): Main mesh points with standard thermal properties
-- **Boundary nodes** (triangles): Edge nodes with boundary conditions
-- **Interface nodes** (squares): Special nodes at material interfaces
+- **Node_type 0 nodes** (circles): Main mesh points
+- **Node_type 1 nodes** (triangles): Assume: edge nodes with boundary conditions
+- **Node_type 2 nodes** (squares): **Do not use
 - Color mapping represents temperature magnitude (hot colors = higher temperatures)
 
 #### 3. Multi-Simulation Comparison
@@ -612,13 +612,14 @@ Implements a **Graph-DeepONet** (Graph Deep Operator Network) architecture desig
 The model learns an operator **G** that maps from input functions to output temperature fields:
 
 ```
-G: (I, T_ambient, k(x), mesh) → T(x, t)
+G: (I, T_ambient, k(x), R_edges, mesh) → T(x, t)
 ```
 
 Where:
 - **I**: Input current (scalar)
 - **T_ambient**: Ambient temperature (scalar)  
 - **k(x)**: Thermal conductivity field at each node
+- **R_edges**: Heat resistance values for edges (thermal resistance between connected nodes)
 - **mesh**: Graph structure with node positions and connectivity
 - **T(x, t)**: Temperature field at position x and time t
 
@@ -627,11 +628,11 @@ Where:
 The DeepONet decomposes the operator into branch and trunk networks:
 
 ```
-T(x, t) = Σᵢ₌₁ᵍ Aᵢ(G, I, T) · φᵢ(x, t)
+T(x, t) = Σᵢ₌₁ᵍ Aᵢ(G, I, T, R) · φᵢ(x, t)
 ```
 
 Where:
-- **Aᵢ**: Branch network coefficients (depends on input functions)
+- **Aᵢ**: Branch network coefficients (depends on input functions and graph properties)
 - **φᵢ**: Trunk network basis functions (depends on coordinates)
 - **q**: Latent dimension (default: 128)
 
@@ -669,23 +670,30 @@ Where:
 
 3. **Graph Branch** (Mesh Encoder):
    
-   Processes node features through GCN layers:
+   Processes node features through GCN layers with heat resistance edge weights:
    ```
    h⁰ = MLP([k, q?, s?])
-   hˡ⁺¹ = GCN(hˡ, edge_index, edge_weight)
+   hˡ⁺¹ = GCN(hˡ, edge_index, edge_weight=1/R_edge)
    A_node = Linear(h^L) ∈ ℝᴺˣᵍ
    ```
    
    Where:
-   - **k**: Thermal conductivity
-   - **q, s**: Optional additional node features
+   - **k**: Thermal conductivity at nodes
+   - **R_edge**: Heat resistance values for edges (edge_attr_r)
+   - **edge_weight**: Computed as 1/R_edge (normalized by max value)
+   - **q, s**: Optional additional node features (heat source, heat capacity)
    - **GCN**: Graph Convolutional Network layers
    - **N**: Number of nodes
    
+   The edge weights are derived from heat resistance:
+   - Higher resistance → Lower weight → Less heat flow
+   - Lower resistance → Higher weight → More heat flow
+   - Normalization ensures numerical stability
+   
    Architecture:
    - Node features: k (+ optional q, s)
+   - Edge weights: Normalized inverse heat resistance (1/R)
    - GCN layers: 1-2 layers (CPU-friendly)
-   - Edge weights: Normalized by max value
    - Output: Per-node coefficients A
 
 4. **FiLM Conditioning** (Feature-wise Linear Modulation):
@@ -748,6 +756,7 @@ model = GraphDeepONet(
 1. **Input Processing**:
    ```python
    # Per-sample encoding (cached)
+   # edge_attr_r contains heat resistance values for each edge
    cache = model.encode_case(edge_index, edge_attr_r, k, node_pos, I_T, q, s)
    # cache contains: A (per-node coefficients), z_global, node_latents
    ```
@@ -780,6 +789,7 @@ Where S is the number of sampled points.
 1. **Physical Interpretability**: 
    - Separates spatial basis (trunk) from case-specific coefficients (branch)
    - Respects graph structure of mesh
+   - Incorporates physical heat resistance in edge weights
 
 2. **Generalization**:
    - Can predict at any space-time coordinate
@@ -794,6 +804,73 @@ Where S is the number of sampled points.
    - Modular design allows easy modifications
    - Supports various node/edge features
    - Adaptable to different mesh types
+
+#### Training Script: `train.py`
+
+Main training script that orchestrates the complete training pipeline with validation-based model checkpointing.
+
+##### Training Loop Architecture:
+
+The training script implements a robust training/validation loop with early stopping and best model preservation:
+
+```
+For each epoch:
+  1. Training Phase:
+     - Iterate through training batches
+     - Compute forward pass and loss
+     - Backpropagate and update weights
+     - Track training metrics
+  
+  2. Validation Phase:
+     - Evaluate on validation set (no gradients)
+     - Compute validation loss and metrics
+     
+  3. Model Checkpointing:
+     - If val_loss < best_val_loss:
+       - Save model as 'best.pt'
+       - Update best_val_loss
+       - Record best epoch
+     - Always save 'latest.pt' for resumption
+```
+
+##### Key Features:
+
+1. **Best Model Selection**:
+   - After each training epoch, performs full validation
+   - Compares current validation loss with historical best
+   - Saves model checkpoint when validation improves
+   - Prevents overfitting by preserving best generalizing model
+
+2. **Checkpoint Management**:
+   ```python
+   # Checkpoint structure saved in 'best.pt':
+   {
+       'epoch': current_epoch,
+       'state_dict': model.state_dict(),
+       'optimizer': optimizer.state_dict(),
+       'scheduler': scheduler.state_dict() if exists,
+       'train_loss': current_train_loss,
+       'val_loss': best_val_loss,
+       'config': training_configuration
+   }
+   ```
+
+3. **Loss Tracking**:
+   - Maintains history of train/validation losses
+   - Generates loss curves for visualization
+   - Enables early stopping based on validation plateau
+
+4. **Progress Monitoring**:
+   - Real-time display of training metrics
+   - Epoch-wise summary with train/val losses
+   - Best model indicator when validation improves
+
+##### Core Functionality:
+- Loads the model from `model.py`
+- Uses sampling strategies from `sampler.py`
+- Trains the model with specified hyperparameters
+- Implements validation-based checkpointing
+- Supports training resumption from checkpoints
 
 #### Sampler Module: `sampler.py`
 
