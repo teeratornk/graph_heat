@@ -76,6 +76,43 @@ This loss curve demonstrates:
 - **Convergence**: Model reaches stable performance after ~50 epochs
 - **Final Performance**: Loss converges to low values (<0.001 MSE)
 
+### Model Prediction Results
+
+#### 6. Spatial Temperature Predictions
+<div align="center">
+  <img src="assets/S003_snapshot_t0.png" alt="Initial State Prediction" width="100%">
+  <p><em>Temperature prediction at initial time (t=0) - Model accurately captures uniform initial conditions</em></p>
+</div>
+
+<div align="center">
+  <img src="assets/S003_snapshot_t60.png" alt="Mid-Simulation Prediction" width="100%">
+  <p><em>Temperature prediction at mid-simulation (t=60) - Shows good agreement during transient phase</em></p>
+</div>
+
+<div align="center">
+  <img src="assets/S003_snapshot_t119.png" alt="Final State Prediction" width="100%">
+  <p><em>Temperature prediction at final time (t=119) - Demonstrates accurate steady-state prediction</em></p>
+</div>
+
+These spatial snapshots demonstrate:
+- **Accurate Temperature Fields**: Model predictions (center) closely match true values (left)
+- **Low Spatial Errors**: Error maps (right) show errors typically under 10-20K
+- **Hotspot Capture**: Model correctly identifies high-temperature regions
+- **Boundary Handling**: Good prediction accuracy near mesh boundaries
+
+#### 7. Temporal Evolution Tracking
+<div align="center">
+  <img src="assets/S003_hotspot_curve.png" alt="Temporal Evolution" width="80%">
+  <p><em>Temperature evolution at hotspot and cold nodes - Model captures both heating and steady-state behavior</em></p>
+</div>
+
+This temporal analysis shows:
+- **Hotspot Tracking**: Model follows temperature rise at the hottest node (top)
+- **Cold Node Prediction**: More challenging but captures general trend (bottom)
+- **Transient Dynamics**: Good agreement during heating phase
+- **Steady-State**: Converges to correct final temperatures
+- **Oscillation Challenges**: Some prediction noise in low-temperature regions
+
 ## Project Workflow
 
 ### Step 1: Exploratory Data Analysis (EDA)
@@ -966,23 +1003,6 @@ with torch.no_grad():
             val_losses.append(F.mse_loss(pred, batch["targets"]))
 ```
 
-##### Performance Considerations:
-
-1. **Sampling Fractions**:
-   - `t_subsample_frac=0.2`: Sample 20% of timesteps (24 out of 120)
-   - `node_subsample_frac=0.2`: Sample 20% of nodes (~1072 out of 5361)
-   - Results in ~25,000 pairs before capping
-
-2. **Memory Usage**:
-   - Training: ~1000 pairs per sample (after capping)
-   - Validation: ~32,000 pairs per sample (12 times × 1340 nodes)
-   - Test: ~643,000 pairs per sample (120 times × 5361 nodes)
-
-3. **Speed Optimizations**:
-   - Vectorized indexing for coordinate gathering
-   - Efficient numpy operations for pair generation
-   - Minimal data copying with direct HDF5 access
-
 #### Training Script: `train.py`
 - Main training script that:
   - Loads the model from `model.py`
@@ -990,166 +1010,223 @@ with torch.no_grad():
   - Trains the model with specified hyperparameters
 
 **Shell Scripts for Training:**
-- `train_basic.sh`: Basic training configuration
-- `train_full.sh`: Full training with all features enabled
-- `train_distributed.sh`: Distributed training across multiple GPUs (if available)
+- `train_small.sh`: Lightweight training configuration for quick testing
+- `train_recommended.sh`: Recommended training configuration with optimized hyperparameters
 
-### Step 6: Model Testing
+### Step 6: Model Testing & Visualization
 **Main Script:** `test.py`
 
-This script evaluates the trained model on the test dataset and generates performance metrics and visualizations.
+This comprehensive script evaluates the trained model on the test dataset and generates extensive visualizations and performance metrics.
 
 #### Functionality:
-- Loads the trained model and normalization parameters
-- Performs inference on the test set
-- Computes performance metrics (e.g., MAE, RMSE)
-- Generates visualizations of predicted vs. actual temperatures
+- **Model Evaluation**: Loads trained model and performs inference on test samples
+- **Metric Computation**: Calculates comprehensive performance metrics
+- **Visualization Generation**: Creates various plots and analyses
+- **Result Export**: Saves predictions and metrics in multiple formats
+
+#### Key Features:
+
+1. **Dual Mode Operation**:
+   - **Full Testing**: Complete evaluation with model inference
+   - **Visualization Only** (`--viz_only`): Regenerate plots from existing results
+
+2. **Comprehensive Metrics**:
+   - **Standard Metrics**: MAE, RMSE, MSE, MAPE
+   - **Normalized & Denormalized**: Metrics in both normalized and original units (Kelvin)
+   - **Hotspot Analysis**: Specific metrics for temperature hotspots
+   - **Per-Sample & Aggregate**: Individual and overall performance
+
+3. **Integrated Visualizations**:
+
+   **Error Analysis**:
+   - `error_hist.png`: Distribution of prediction errors with KDE overlay
+   - `pred_vs_true.png`: Scatter plot with R² calculation
+   - `temperature_analysis.png`: Temperature distribution comparison
+
+   **Temporal Analysis**:
+   - `{sample_id}_hotspot_curve.png`: Time evolution for hottest/coldest nodes
+   - Comparison of predicted vs actual temperature curves
+
+   **Spatial Analysis**:
+   - `{sample_id}_snapshot_t{time}.png`: Spatial temperature distribution at key times
+   - Side-by-side comparison of true, predicted, and error fields
+
+   **Performance Summary**:
+   - `sample_metrics_bar.png`: Bar chart comparing metrics across test samples
+   - Color-coded visualization with value annotations
+
+4. **Data Management**:
+   - **HDF5 Storage**: Efficient storage of predictions in `predictions.h5`
+   - **JSON Metrics**: Detailed metrics in `metrics.json`
+   - **CSV Summary**: Tabular results in `summary.csv`
 
 #### Process Flow:
-1. Loads the test data split from `processed_data/train_val_test_split.json`
-2. For each test sample:
-   - Loads the corresponding HDF5 data
-   - Applies normalization
-   - Performs inference using the trained model
-   - Denormalizes the predicted temperature
 
-3. Computes performance metrics:
-   - Mean Absolute Error (MAE)
-   - Root Mean Square Error (RMSE)
-   - Coefficient of Determination (R²)
+1. **Model Loading**:
+   ```python
+   # Load best checkpoint
+   checkpoint = torch.load('best.pt')
+   model.load_state_dict(checkpoint['state_dict'])
+   ```
 
-4. Generates visualizations:
-   - 2D plots of predicted vs. actual temperatures
-   - 3D surface plots of temperature fields
-   - Error distribution histograms
+2. **Test Evaluation**:
+   ```python
+   # Evaluate on test set
+   all_results = evaluate_all_test_samples(
+       model, dataset, test_config, split_path, device
+   )
+   ```
 
-#### Output Files:
-- `outputs/test_results/`: Folder containing results for each test sample
-- `outputs/test_results/*.json`: JSON files with performance metrics
-- `outputs/test_results/*.png`: Visualization files (2D/3D plots)
+3. **Metric Computation**:
+   - Processes each test sample
+   - Computes normalized and denormalized errors
+   - Calculates hotspot-specific metrics
+   - Aggregates results with weighted averaging
 
-#### Key Metrics Calculated:
-- **Global Metrics**:
-  - Overall MAE and RMSE for the test set
-  - Mean R² value across all test samples
+4. **Visualization Generation**:
+   - Automatically generates all plots after evaluation
+   - Supports both normalized and denormalized units
+   - Creates publication-ready figures at 150 DPI
 
-- **Sample-Level Metrics**:
-  - MAE, RMSE, and R² for each individual test sample
-  - Histograms of error distributions
+#### Output Structure:
+```
+test_results_YYYYMMDD_HHMMSS/
+├── metrics.json          # Complete metrics (per-sample & aggregate)
+├── predictions.h5        # Full predictions for all test samples
+├── summary.csv          # Tabular summary of key metrics
+└── figures/             # All generated visualizations
+    ├── error_hist.png
+    ├── pred_vs_true.png
+    ├── temperature_analysis.png
+    ├── sample_metrics_bar.png
+    ├── S008_hotspot_curve.png
+    ├── S008_snapshot_t0.png
+    ├── S008_snapshot_t60.png
+    ├── S008_snapshot_t119.png
+    ├── S009_hotspot_curve.png
+    └── ...
+```
 
-- **Visualization Examples**:
-  - Predicted vs. actual temperature comparison plots
-  - 3D surface plots of temperature fields
-  - Error heatmaps
+#### Usage Examples:
 
-#### Usage:
+**Shell Scripts for Testing**:
+- `test_latest.sh`: Test the most recent model checkpoint
+- `test_model.sh`: Test a specific model with custom configuration
+
+**Full Test Evaluation**:
 ```bash
-# Evaluate the model on the test set
-python test.py
+# Test using the latest model with shell script
+./test_latest.sh
 
-# Specify model and data locations
-python test.py --model_path outputs/models/best_model.pth --data_path processed_data/test_data.json
+# Test a specific model with shell script
+./test_model.sh
 
-# Output:
-# Test results saved to: outputs/test_results/
-# 
-# TEST RESULTS SUMMARY
-# ============================================================
-# Total samples: 2
-# Mean Absolute Error (MAE): 0.1234
-# Root Mean Square Error (RMSE): 0.5678
-# Mean R²: 0.9101
+# Or run directly with Python
+python test.py --run_dir runs/experiment_001
+
+# Custom batch size for memory management
+python test.py --run_dir runs/experiment_001 --batch_nodes 500
+
+# Specify custom output directory
+python test.py --run_dir runs/experiment_001 --outdir test_results_final
 ```
 
-### Step 7: Results Visualization
-**Main Script:** `visualize_results.py`
-
-This script generates comprehensive visualizations of the analysis and model results.
-
-#### Functionality:
-- Visualizes EDA results (e.g., temperature distributions, hotspot analyses)
-- Plots model prediction results (e.g., predicted vs. actual temperatures)
-- Creates 3D surface plots of temperature fields
-- Generates error distribution histograms
-
-#### Process Flow:
-1. Loads analysis results from `outputs/eda/analysis_results.json`
-2. Loads model prediction results from `outputs/test_results/*.json`
-3. For each simulation/test sample:
-   - Generates 3D surface plots of temperature fields
-   - Creates 2D plots of predicted vs. actual temperatures
-   - Plots error distributions as histograms
-
-4. Saves all visualizations to output directory
-
-#### Output Files:
-- `outputs/visualizations/`: Folder containing all visualization files
-- `outputs/visualizations/*.png`: Visualization files (2D/3D plots)
-
-#### Usage:
+**Visualization Only Mode**:
 ```bash
-# Generate visualizations of analysis and model results
-python visualize_results.py
+# Regenerate visualizations from existing results
+python test.py --run_dir runs/experiment_001 --viz_only
 
-# Specify output directory
-python visualize_results.py --output_dir outputs/visualizations/
-
-# Output:
-# Visualizations saved to: outputs/visualizations/
+# Regenerate with different scalers
+python test.py --run_dir runs/experiment_001 --viz_only --scalers processed_data/scalers_v2.json
 ```
 
-## Directory Structure
+#### Key Metrics Explained:
+
+1. **Normalized Metrics**:
+   - Values in [0, 1] range after normalization
+   - Used for model training and optimization
+   - Allows comparison across different scales
+
+2. **Denormalized Metrics (Kelvin)**:
+   - Physical temperature units
+   - More interpretable for domain experts
+   - Example: "MAE: 2.3 K" means average error of 2.3 Kelvin
+
+3. **Hotspot Metrics**:
+   - Focuses on highest temperature regions
+   - Critical for safety and reliability assessment
+   - Separate tracking of hotspot prediction accuracy
+
+4. **MAPE (Mean Absolute Percentage Error)**:
+   - Percentage-based error metric
+   - Scale-independent comparison
+   - Useful for relative error assessment
+
+#### Example Output:
 ```
-graph_heat_project/
-├── assets/                     # Assets for reports and visualizations
-│   ├── exploration_report.html
-│   ├── temperature_final_3d_with_node_types.png
-│   ├── simulation_comparison.png
-│   └── all_hotspots_analysis.png
-├── data/                       # Input data directory
-│   ├── I=1500_T=25.hdf5
-│   ├── I=1500_T=35.hdf5
-│   └── ...
-├── outputs/                    # Output directory for all results
-│   ├── eda/                   # EDA results
-│   │   ├── exploration_report.html
-│   │   ├── analysis_results.json
-│   │   ├── all_simulations_metadata.json
-│   │   └── sim_*/             # Individual simulation results
-│   ├── models/                # Trained model checkpoints
-│   │   ├── best_model.pth
-│   │   └── ...
-│   ├── test_results/          # Model test results
-│   │   ├── sample_1.json
-│   │   ├── sample_2.json
-│   │   └── ...
-│   └── visualizations/        # Visualization outputs
-│       ├── sample_1/
-│       │   ├── temperature_field_3d.png
-│       │   ├── predicted_vs_actual.png
-│       │   └── error_distribution.png
-│       └── sample_2/
-│           ├── temperature_field_3d.png
-│           ├── predicted_vs_actual.png
-│           └── error_distribution.png
-├── .gitignore
-├── README.md
-└── requirements.txt
+TEST EVALUATION COMPLETE
+============================================================
+Test samples evaluated: 2
+Total prediction pairs: 1,286,640
+
+Aggregate Metrics:
+  MAE (normalized):  0.003456
+  RMSE (normalized): 0.005678
+  MSE (normalized):  0.000032
+  MAE (K):  2.34
+  RMSE (K): 3.85
+  MAPE: 1.23%
+  Hotspot MAE:  3.12 K
+  Hotspot RMSE: 4.56 K
+
+Results saved to: runs/experiment_001/test_results_20241215_143022
 ```
 
-## Future Work
-- Explore advanced graph neural network architectures
-- Investigate transfer learning for low-data regimes
-- Implement real-time monitoring and anomaly detection
-- Extend to 3D simulations and complex geometries
-- Integrate with CAD tools for automated design optimization
+### Step 7: Results Analysis
+**Integration with Step 6**
 
-## Acknowledgments
-- [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/) - For graph neural network implementation
-- [Matplotlib](https://matplotlib.org/) - For visualization
-- [NumPy](https://numpy.org/) - For numerical computing
-- [Pandas](https://pandas.pydata.org/) - For data analysis
-- [SciPy](https://www.scipy.org/) - For scientific computing
-- [Scikit-learn](https://scikit-learn.org/stable/) - For machine learning utilities
-- [Jinja2](https://jinja.palletsprojects.com/) - For templating HTML reports
-- [WeasyPrint](https://weasyprint.org/) - For PDF generation
+The visualization and analysis capabilities are fully integrated into the testing pipeline (`test.py`), providing immediate insights without requiring separate scripts.
+
+#### Analysis Categories:
+
+1. **Performance Analysis**:
+   - Quantitative metrics for model accuracy
+   - Error distribution and statistical analysis
+   - Sample-wise performance comparison
+
+2. **Physical Validation**:
+   - Temperature distribution fidelity
+   - Hotspot location accuracy
+   - Temporal evolution consistency
+
+3. **Model Behavior Analysis**:
+   - Error correlation with temperature magnitude
+   - Spatial error patterns
+   - Temporal prediction stability
+
+#### Key Visualizations for Analysis:
+
+1. **Error Distribution Analysis** (`error_hist.png`):
+   - Shows prediction error spread
+   - Identifies systematic biases
+   - Validates Gaussian error assumption
+
+2. **Prediction Accuracy** (`pred_vs_true.png`):
+   - Direct comparison of predictions vs ground truth
+   - R² coefficient for correlation strength
+   - Identifies outliers and problematic regions
+
+3. **Temperature Analysis** (`temperature_analysis.png`):
+   - Distribution comparison between true and predicted
+   - Error dependency on temperature magnitude
+   - Helps identify model limitations
+
+4. **Spatial Error Patterns** (`snapshot_*.png`):
+   - Visualizes where errors occur in the mesh
+   - Identifies problematic regions (boundaries, interfaces)
+   - Validates spatial generalization
+
+5. **Temporal Dynamics** (`hotspot_curve.png`):
+   - Tracks prediction quality over time
+   - Validates transient behavior modeling
+   - Shows steady-state prediction accuracy
