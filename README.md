@@ -80,8 +80,8 @@ This loss curve demonstrates:
 
 #### 6. Spatial Temperature Predictions
 <div align="center">
-  <img src="assets/S003_snapshot_t0.png" alt="Initial State Prediction" width="100%">
-  <p><em>Temperature prediction at initial time (t=0) - Model accurately captures uniform initial conditions</em></p>
+  <img src="assets/S003_snapshot_t0.png" alt="After Initial State Prediction" width="100%">
+  <p><em>Temperature prediction after initial time (t=0) - Model accurately captures time after uniform initial conditions</em></p>
 </div>
 
 <div align="center">
