@@ -6,13 +6,215 @@ A machine learning project for analyzing and predicting heat distribution using 
 
 This project implements a complete pipeline for processing CFD data, converting it to graph representations, and training graph neural networks for heat prediction tasks.
 
+## Example Outputs
+
+### Exploratory Data Analysis Results
+
+The EDA pipeline generates comprehensive visualizations and reports. Here are some example outputs:
+
+#### 1. Interactive HTML Report
+<div align="center">
+  <img src="assets/exploration_report.html" alt="Exploration Report">
+  <p><em>Interactive HTML report with comprehensive analysis findings</em></p>
+</div>
+
+The HTML report (`exploration_report.html`) provides:
+- Complete dataset overview with interactive elements
+- Individual simulation analysis cards
+- Statistical summaries and correlations
+- Modeling recommendations based on data characteristics
+- [View Report](assets/exploration_report.html)
+
+#### 2. Temperature Distribution with Node Types
+<div align="center">
+  <img src="assets/temperature_final_3d_with_node_types.png" alt="3D Temperature with Node Types" width="80%">
+  <p><em>3D visualization showing temperature distribution with different node types (interior, boundary, interface)</em></p>
+</div>
+
+This visualization shows:
+- **Interior nodes** (circles): Main mesh points with standard thermal properties
+- **Boundary nodes** (triangles): Edge nodes with boundary conditions
+- **Interface nodes** (squares): Special nodes at material interfaces
+- Color mapping represents temperature magnitude (hot colors = higher temperatures)
+
+#### 3. Multi-Simulation Comparison
+<div align="center">
+  <img src="assets/simulation_comparison.png" alt="Simulation Comparison" width="90%">
+  <p><em>Comparison of temperature evolution across different simulation conditions</em></p>
+</div>
+
+Key insights from this comparison:
+- Left plot: Temperature evolution over time for different current/ambient conditions
+- Right plot: Correlation between input current and maximum temperature
+- Color coding indicates ambient temperature effects
+- Clear linear relationship with R² > 0.9
+
+#### 4. Comprehensive Hotspot Analysis
+<div align="center">
+  <img src="assets/all_hotspots_analysis.png" alt="Hotspot Analysis" width="90%">
+  <p><em>Statistical analysis of hotspot locations and temperatures across all simulations</em></p>
+</div>
+
+This comprehensive analysis reveals:
+- **Top-left**: Current vs hotspot temperature relationship
+- **Top-right**: Spatial distribution of hotspot locations
+- **Bottom-left**: Temperature histogram showing hotspot distribution
+- **Bottom-right**: Most frequent hotspot nodes for targeted monitoring
+
 ## Project Workflow
 
 ### Step 1: Exploratory Data Analysis (EDA)
-**Script:** `generate_exploration_report.py`
-- Generates comprehensive exploration reports for the CFD dataset
-- Internally calls `explore_cfd_data.py` as a subprocess to perform detailed analysis
-- Produces visualizations and statistics about the data distribution
+**Main Script:** `generate_exploration_report.py`
+
+This is the entry point for data exploration that orchestrates the entire EDA process:
+
+#### Functionality:
+- **Automated Pipeline**: Runs `explore_cfd_data.py` as a subprocess to perform comprehensive data analysis
+- **Report Generation**: Creates an interactive HTML report with all exploration findings
+- **Results Aggregation**: Combines analysis results from multiple sources into a unified report
+
+#### Process Flow:
+1. Executes `explore_cfd_data.py` via subprocess to analyze CFD simulation data
+2. Loads analysis results from JSON files:
+   - `outputs/eda/analysis_results.json` - Main analysis metrics
+   - `outputs/eda/all_simulations_metadata.json` - Individual simulation details
+3. Generates comprehensive HTML report with:
+   - Dataset overview (number of simulations, mesh size, time steps)
+   - Individual simulation analysis cards with visualizations
+   - Spatial analysis summary (hotspot locations, temperature distributions)
+   - Temporal analysis (steady-state times, temperature evolution patterns)
+   - Node property statistics by type
+   - Multi-simulation comparison and correlations
+   - Modeling recommendations based on findings
+   - Data quality assessment
+
+#### Output Files:
+- `outputs/eda/exploration_report.html` - Main HTML report
+- `outputs/eda/analysis_results.json` - Structured analysis data
+- `outputs/eda/all_simulations_metadata.json` - Per-simulation metadata
+- `outputs/eda/sim_*/` - Individual simulation visualizations
+
+#### Key Insights Generated:
+- Temperature-current relationship sensitivity
+- Hotspot identification and characterization
+- Steady-state convergence analysis
+- Feature importance for modeling
+- Recommended prediction horizons
+
+#### Usage:
+```bash
+# Run complete EDA pipeline and generate report
+python generate_exploration_report.py
+
+# The script will automatically:
+# 1. Run explore_cfd_data.py
+# 2. Process all simulation files
+# 3. Generate visualizations
+# 4. Create HTML report
+```
+
+#### Subprocess: `explore_cfd_data.py`
+
+This script performs the detailed analysis of CFD simulation data:
+
+##### Core Functions:
+
+1. **Data Loading (`load_simulation_data`)**:
+   - Loads HDF5 simulation files from `data/` directory
+   - Extracts metadata from filenames (current and ambient temperature)
+   - Handles both `.hdf5` and `.h5` file formats
+   - Parses file patterns like `I=1500_T=15` for current and temperature values
+
+2. **Data Structure Exploration (`explore_data_structure`)**:
+   - Identifies and maps data arrays:
+     - `node_pos`: 3D coordinates of mesh nodes (5361 nodes × 3 dimensions)
+     - `temperature`: Temperature evolution (121 time steps × 5361 nodes)
+     - `k`: Thermal conductivity values for each node
+     - `node_types`: Node classification (interior, boundary, interface)
+     - `edge_src/edge_dst`: Graph connectivity information
+   - Handles 3D temperature arrays by squeezing unnecessary dimensions
+
+3. **Spatial Analysis**:
+   - **3D Temperature Visualization**: Creates 3D scatter plots with temperature color mapping
+   - **Node Type Analysis**: Visualizes different node types with distinct markers:
+     - Type 0: Interior nodes (circles)
+     - Type 1: Boundary nodes (triangles)
+     - Type 2: Interface/Special nodes (squares)
+   - **2D Projections**: Generates XY, XZ, and YZ projections with node type overlays
+   - **Hotspot Identification**: Finds nodes with highest temperatures and their coordinates
+
+4. **Temporal Analysis**:
+   - **Evolution Tracking**: Plots temperature vs time for selected nodes
+   - **Steady-State Detection**: Determines convergence using rate-of-change threshold (0.01°C)
+   - **Time Constant Estimation**: Calculates thermal response time (63.2% of final temperature)
+   - **Pattern Recognition**: Identifies temperature rise patterns (exponential/linear)
+
+5. **Node Property Analysis (`analyze_node_properties`)**:
+   - Correlates temperature with:
+     - Thermal conductivity (k values)
+     - Node types (boundary conditions)
+     - Spatial coordinates (X, Y, Z)
+   - Generates correlation matrix and statistical summaries
+   - Creates box plots for temperature distribution by node type
+
+6. **Multi-Simulation Comparison (`compare_simulations`)**:
+   - Compares temperature evolution across different operating conditions
+   - Analyzes current-temperature relationships
+   - Studies ambient temperature effects
+   - Calculates sensitivity metrics (°C/A)
+   - Performs linear regression with R² calculation
+
+7. **Comprehensive Hotspot Analysis (`analyze_all_hotspots`)**:
+   - Aggregates hotspot data across all simulations
+   - Identifies most frequent hotspot locations
+   - Analyzes hotspot temperature distributions
+   - Creates frequency maps of critical regions
+
+##### Visualization Outputs:
+For each simulation, generates:
+- `temperature_initial_3d.png`: Initial temperature distribution
+- `temperature_final_3d.png`: Final steady-state temperature
+- `temperature_final_3d_with_node_types.png`: Temperature with node type markers
+- `temperature_by_node_type_separate.png`: Separate views for each node type
+- `temperature_final_2d_*_with_node_types.png`: 2D projections (XY, XZ, YZ)
+- `temperature_evolution.png`: Time series for representative nodes
+- `node_property_analysis.png`: Property correlation analysis
+
+Comparative visualizations:
+- `simulation_comparison.png`: Cross-simulation temperature evolution
+- `all_hotspots_analysis.png`: Comprehensive hotspot statistics
+
+##### Data Files Generated:
+- `outputs/eda/analysis_results.json`: Main analysis metrics and findings
+- `outputs/eda/all_simulations_metadata.json`: Per-simulation metadata
+- `outputs/eda/hotspots_summary.csv`: Detailed hotspot information
+- `outputs/eda/sim_*/`: Individual simulation results folders
+
+##### Key Metrics Extracted:
+- **Spatial Metrics**:
+  - Maximum/minimum temperatures and locations
+  - Temperature gradients and distributions
+  - Hotspot coordinates and intensities
+  - Node type temperature statistics
+
+- **Temporal Metrics**:
+  - Steady-state convergence time
+  - Time constants for thermal response
+  - Temperature rise rates
+  - Stability indicators
+
+- **Correlation Metrics**:
+  - Current sensitivity (°C/A)
+  - Ambient temperature effects
+  - R² values for predictive models
+  - Feature importance rankings
+
+##### Usage Notes:
+- Automatically processes all HDF5 files in `data/` directory
+- Handles varying mesh sizes and time steps
+- Robust to missing data fields
+- Creates comprehensive visualization suite
+- Saves all results in JSON format for downstream processing
 
 ### Step 2: HDF5 Data Analysis
 **Script:** `batch_analyze_hdf5.py`
@@ -183,7 +385,7 @@ Configuration parameters can be modified in:
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.10+
 - PyTorch 1.9+
 - PyTorch Geometric
 - NumPy

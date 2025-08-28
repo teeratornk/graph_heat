@@ -186,13 +186,21 @@ exploration_results/
 *.svg
 *.pdf
 
-# Allow assets folder
+# Allow assets folder and all its contents
 !assets/
 !assets/**
+!assets/*.html
+!assets/*.png
+!assets/*.jpg
+!assets/*.jpeg
+!assets/*.gif
+!assets/*.svg
+!assets/*.pdf
 
-# Reports (except the template)
+# Reports (except the template and assets)
 *.html
 !template_report.html
+!assets/**/*.html
 
 # Temporary files
 *.tmp

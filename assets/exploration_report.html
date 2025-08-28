@@ -1,0 +1,213 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>CFD Simulation Data Exploration Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            h1 { color: #333; }
+            h2 { color: #666; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+            h3 { color: #888; }
+            .figure { margin: 20px 0; text-align: center; }
+            .figure img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+            .stats-table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+            .stats-table th, .stats-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .stats-table th { background-color: #f4f4f4; }
+            .highlight { background-color: #ffffcc; padding: 10px; margin: 10px 0; border-left: 4px solid #ff9900; }
+            .metric { display: inline-block; margin: 10px 20px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; }
+            .sim-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+            .sim-card { border: 1px solid #ddd; padding: 10px; background: #f9f9f9; }
+            .sim-card img { width: 100%; height: auto; }
+        </style>
+    </head>
+    <body>
+        <h1>CFD Simulation Data Exploration Report</h1>
+        <p>Generated on: 2025-08-27 15:12:45</p>
+        
+        <h2>1. Dataset Overview</h2>
+        <div class="metric">
+            <strong>Simulations:</strong> 10
+        </div>
+        <div class="metric">
+            <strong>Mesh Size:</strong> 5361 nodes
+        </div>
+        <div class="metric">
+            <strong>Time Steps:</strong> 121
+        </div>
+        
+        <h2>2. Individual Simulation Analysis</h2>
+        <div class="sim-gallery">
+        <div class="sim-card">
+            <h3>Simulation 1: graph_module_short_I=1500_T=15_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 1500.0 A | <strong>Ambient:</strong> 15.0°C</p>
+            <p><strong>Max Temp:</strong> 305.9°C | <strong>Range:</strong> 17.7°C</p>
+            <img src="sim_01/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 2: graph_module_short_I=2000_T=30_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 2000.0 A | <strong>Ambient:</strong> 30.0°C</p>
+            <p><strong>Max Temp:</strong> 332.3°C | <strong>Range:</strong> 29.2°C</p>
+            <img src="sim_02/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 3: graph_module_short_I=2500_T=45_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 2500.0 A | <strong>Ambient:</strong> 45.0°C</p>
+            <p><strong>Max Temp:</strong> 360.6°C | <strong>Range:</strong> 42.4°C</p>
+            <img src="sim_03/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 4: graph_module_short_I=3150_T=20_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 3150.0 A | <strong>Ambient:</strong> 20.0°C</p>
+            <p><strong>Max Temp:</strong> 358.5°C | <strong>Range:</strong> 65.4°C</p>
+            <img src="sim_04/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 5: graph_module_short_I=3150_T=28.7_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 3150.0 A | <strong>Ambient:</strong> 28.0°C</p>
+            <p><strong>Max Temp:</strong> 366.8°C | <strong>Range:</strong> 64.9°C</p>
+            <img src="sim_05/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 6: graph_module_short_I=3500_T=05_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 3500.0 A | <strong>Ambient:</strong> 5.0°C</p>
+            <p><strong>Max Temp:</strong> 357.6°C | <strong>Range:</strong> 79.5°C</p>
+            <img src="sim_06/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 7: graph_module_short_I=4000_T=30_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 4000.0 A | <strong>Ambient:</strong> 30.0°C</p>
+            <p><strong>Max Temp:</strong> 400.0°C | <strong>Range:</strong> 96.8°C</p>
+            <img src="sim_07/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 8: graph_module_short_I=4000_T=50_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 4000.0 A | <strong>Ambient:</strong> 50.0°C</p>
+            <p><strong>Max Temp:</strong> 417.4°C | <strong>Range:</strong> 94.3°C</p>
+            <img src="sim_08/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 9: graph_module_short_I=4500_T=40_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 4500.0 A | <strong>Ambient:</strong> 40.0°C</p>
+            <p><strong>Max Temp:</strong> 429.3°C | <strong>Range:</strong> 116.2°C</p>
+            <img src="sim_09/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        
+        <div class="sim-card">
+            <h3>Simulation 10: graph_module_short_I=5000_T=20_theta30_knode.hdf5</h3>
+            <p><strong>Current:</strong> 5000.0 A | <strong>Ambient:</strong> 20.0°C</p>
+            <p><strong>Max Temp:</strong> 434.7°C | <strong>Range:</strong> 141.5°C</p>
+            <img src="sim_10/temperature_final_3d.png" alt="Final temperature">
+            <p><strong>Steady State:</strong> Not reached</p>
+        </div>
+        </div>
+        
+        <h2>3. Spatial Analysis Summary</h2>
+        <div class="highlight">
+            <h3>Key Findings:</h3>
+            <ul>
+                <li>Hotspot location identified at coordinates: (2.684, 1.981, -0.344)</li>
+                <li>Maximum temperature reached: 434.70°C</li>
+                <li>Minimum temperature: 278.15°C</li>
+                <li>Temperature range: 141.55°C</li>
+            </ul>
+        </div>
+        
+        <h2>4. Temporal Analysis Summary</h2>
+        <div class="highlight">
+            <h3>Key Findings:</h3>
+            <ul>
+                <li>Average steady state reached at time step: Varies</li>
+                <li>Time constant estimate: 121.00 steps</li>
+                <li>Temperature rise pattern: exponential</li>
+            </ul>
+        </div>
+        
+        <h2>5. Node Property Analysis</h2>
+        <table class="stats-table">
+            <tr>
+                <th>Node Type</th>
+                <th>Count</th>
+                <th>Mean Final Temp (°C)</th>
+                <th>Std Dev</th>
+                <th>Max Temp (°C)</th>
+            </tr>
+            
+                <tr>
+                    <td>0</td>
+                    <td>3359</td>
+                    <td>360.11</td>
+                    <td>-</td>
+                    <td>376.29</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>1960</td>
+                    <td>368.93</td>
+                    <td>-</td>
+                    <td>376.32</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>42</td>
+                    <td>301.52</td>
+                    <td>-</td>
+                    <td>301.52</td>
+                </tr>
+        </table>
+        
+        <h2>6. Multi-Simulation Comparison</h2>
+        <div class="highlight">
+            <h3>Key Findings:</h3>
+            <ul>
+                <li>Temperature increases with current at rate: 0.04 °C/A</li>
+                <li>Model R²: 0.915</li>
+                <li>Ambient temperature effect: linear offset with slight nonlinearity</li>
+            </ul>
+        </div>
+        
+        <div class="figure">
+            <img src="simulation_comparison.png" alt="Simulation Comparison">
+            <p><em>Figure: Comparison across different simulation conditions</em></p>
+        </div>
+        
+        <div class="figure">
+            <img src="all_hotspots_analysis.png" alt="Comprehensive Hotspot Analysis">
+            <p><em>Figure: Comprehensive hotspot analysis across all simulations</em></p>
+        </div>
+        
+        <h2>7. Recommendations for Modeling</h2>
+        <ul>
+            <li><strong>Important features:</strong> spatial coordinates, thermal conductivity, node type</li>
+            <li><strong>Suggested prediction horizon:</strong> 80 time steps</li>
+            <li><strong>Key regions to monitor:</strong> Node 220, Node 78, Node 93</li>
+            <li><strong>Modeling approach:</strong> Consider graph neural networks to capture spatial dependencies</li>
+            <li><strong>Feature engineering:</strong> Include distance from heat source and local connectivity features</li>
+        </ul>
+        
+        <h2>8. Data Quality Notes</h2>
+        <ul>
+            <li>All simulations start from consistent initial conditions</li>
+            <li>Temperature evolution shows expected physical behavior</li>
+            <li>Hotspot locations are consistent across simulations</li>
+            <li>Strong correlation between input current and maximum temperature</li>
+        </ul>
+    </body>
+    </html>
+    
