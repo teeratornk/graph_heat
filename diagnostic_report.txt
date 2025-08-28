@@ -1,0 +1,29 @@
+Dataset Diagnostic Report
+========================
+File: processed_data/normalized_full_dataset.hdf5
+Total samples: 10
+Structure prefix: ''
+
+Shared Data:
+  Has shared: True
+  edge_attr_r:
+    Shape: (40674,)
+    Has NaN: False
+  edge_index:
+    Shape: (2, 40674)
+    Has NaN: False
+  k:
+    Shape: (5319,)
+    Has NaN: False
+  node_pos:
+    Shape: (5319, 3)
+    Has NaN: False
+
+
+
+Summary:
+========
+Total samples: 10
+Problem samples: 0
+
+Split Assignment:

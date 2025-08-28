@@ -186,6 +186,10 @@ exploration_results/
 *.svg
 *.pdf
 
+# Allow assets folder
+!assets/
+!assets/**
+
 # Reports (except the template)
 *.html
 !template_report.html

@@ -1,6 +1,8 @@
 """HTML report generator for CFD simulation exploration results."""
 import json
 import os
+import subprocess
+import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -235,9 +237,45 @@ def generate_html_report(
     print(f"Report generated: {report_path}")
 
 
+def run_exploration_script() -> bool:
+    """Run the explore_cfd_data.py script to generate analysis results.
+    
+    Returns:
+        True if script ran successfully, False otherwise
+    """
+    print("Running CFD data exploration...")
+    try:
+        # Run the exploration script
+        result = subprocess.run(
+            [sys.executable, "explore_cfd_data.py"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print("Exploration completed successfully.")
+        if result.stdout:
+            print(result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error running exploration script: {e}")
+        if e.stderr:
+            print(f"Error output: {e.stderr}")
+        return False
+    except FileNotFoundError:
+        print("explore_cfd_data.py not found in current directory.")
+        return False
+
+
 def main() -> None:
     """Main entry point for report generation."""
-    generate_html_report()
+    # Run exploration script first
+    if run_exploration_script():
+        # Generate report with fresh results
+        generate_html_report()
+    else:
+        print("Failed to run exploration. Attempting to generate report with existing data...")
+        # Try to generate report with existing data if available
+        generate_html_report()
 
 
 if __name__ == "__main__":
