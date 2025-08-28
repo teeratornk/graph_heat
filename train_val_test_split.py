@@ -1,37 +1,3 @@
-"""
-Write a Python script to generate a train/val/test split for full_dataset.hdf5.
-
-Rules:
-1. We have 10 samples: /samples/S000 … /samples/S009.
-   - Choose 8 train, 2 test at the sample level (fix a random seed for reproducibility).
-   - Example: train_ids = ["S000","S001","S002","S003","S004","S005","S006","S007"]
-              test_ids  = ["S008","S009"]
-
-2. For the 8 train samples:
-   - There are 120 timesteps (after dropping the first).
-   - Randomly pick 10% of timesteps (~12 indices) as validation indices.
-   - The remaining 108 are train indices.
-   - Use np.random.choice with a fixed seed (e.g. 42) to select val_time_idx.
-   - Ensure no overlap between train_time_idx and val_time_idx.
-
-3. Output:
-   - Save a JSON file train_val_test_split.json with keys:
-     {
-       "protocol": "8_train_2_test_random_val_10pct",
-       "seed": 42,
-       "train_ids": [...],
-       "test_ids": [...],
-       "val_time_idx": [... list of 12 ints ...],
-       "train_time_idx": [... list of 108 ints ...]
-     }
-   - Print summary to console: counts of train_ids, test_ids, val_time_idx, train_time_idx.
-
-4. Implementation details:
-   - Use Python's json and numpy modules.
-   - Make sure val_time_idx and train_time_idx cover disjoint partitions of range(0,120).
-   - Sort indices before saving to JSON for readability.
-"""
-
 import json
 import numpy as np
 import os

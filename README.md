@@ -217,19 +217,330 @@ Comparative visualizations:
 - Saves all results in JSON format for downstream processing
 
 ### Step 2: HDF5 Data Analysis
-**Script:** `batch_analyze_hdf5.py`
-- Performs batch analysis on HDF5 formatted data files
-- Calls `analyze_hdf5_metadata.py` to interrogate and extract metadata
-- Provides insights into data structure and properties
+**Main Script:** `batch_analyze_hdf5.py`
+
+This script orchestrates batch analysis of multiple HDF5 files in the dataset:
+
+#### Functionality:
+- Iterates through all HDF5 files in the data directory
+- Calls `analyze_hdf5_metadata.py` for each file to extract detailed metadata
+- Aggregates results across all files for comprehensive dataset understanding
+
+#### Subprocess: `analyze_hdf5_metadata.py`
+
+This script performs deep analysis of individual HDF5 files to extract comprehensive metadata:
+
+##### Core Functions:
+
+1. **Statistical Analysis (`compute_statistics`)**:
+   - Calculates min, max, mean, standard deviation for numeric arrays
+   - Detects and counts NaN values in floating-point data
+   - Identifies outliers (values > 3 standard deviations from mean)
+   - Handles non-numeric data gracefully
+
+2. **Dataset Analysis (`analyze_dataset`)**:
+   - Extracts basic metadata: shape, dtype, total size
+   - Computes global statistics for entire dataset
+   - For multi-dimensional arrays:
+     - Analyzes each dimension/feature separately
+     - Calculates percentiles (0, 25, 50, 75, 100)
+   - Provides specialized analysis based on dataset type
+
+3. **Specialized Dataset Handlers**:
+
+   **Temperature Data**:
+   - Analyzes temperature evolution from initial to final state
+   - Tracks maximum and minimum temperatures reached
+   - Calculates temperature rise over simulation
+   - Estimates steady-state temperature
+   - Computes maximum rate of temperature change
+   - Time series statistics for convergence analysis
+
+   **Node Position Data**:
+   - Determines spatial bounds (X, Y, Z min/max)
+   - Calculates mesh centroid location
+   - Computes spatial extent in each dimension
+   - Essential for understanding mesh geometry
+
+   **Edge Data** (connectivity):
+   - Counts unique nodes in graph
+   - Determines node ID range
+   - Calculates total number of edges
+   - Validates graph structure integrity
+
+   **Node Types**:
+   - Categorizes and counts different node types:
+     - Type 0: Interior nodes (standard mesh points)
+     - Type 1: Boundary nodes (with boundary conditions)
+     - Type 2: Interface/special material nodes
+   - Calculates percentage distribution
+   - Critical for understanding boundary conditions
+
+##### Output Metadata Structure:
+
+For each dataset in the HDF5 file, generates:
+```json
+{
+  "dataset_name": {
+    "shape": [dimensions],
+    "dtype": "data_type",
+    "size": total_elements,
+    "global_stats": {
+      "min": value,
+      "max": value,
+      "mean": value,
+      "std": value,
+      "num_nan": count,
+      "num_outliers": count
+    },
+    "global_percentiles": {
+      "p0": min_value,
+      "p25": first_quartile,
+      "p50": median,
+      "p75": third_quartile,
+      "p100": max_value
+    },
+    "features": {
+      "dim_0": {statistics},
+      "dim_1": {statistics},
+      ...
+    }
+  }
+}
+```
+
+##### Usage:
+
+**Command Line Interface**:
+```bash
+# Analyze a single HDF5 file
+python analyze_hdf5_metadata.py data/simulation.hdf5
+
+# Specify output location
+python analyze_hdf5_metadata.py data/simulation.hdf5 -o outputs/metadata.json
+
+# The script will output:
+# 1. Console summary of all datasets
+# 2. Detailed statistics for each dataset
+# 3. JSON file with complete metadata
+```
+
+**Programmatic Usage** (called by batch_analyze_hdf5.py):
+```python
+from analyze_hdf5_metadata import analyze_hdf5_file, save_metadata
+
+# Analyze file
+metadata = analyze_hdf5_file('data/simulation.hdf5')
+
+# Save results
+save_metadata(metadata, 'outputs/metadata.json')
+```
+
+##### Key Insights Provided:
+
+1. **Data Quality Metrics**:
+   - NaN detection for data validation
+   - Outlier identification for anomaly detection
+   - Statistical distribution for normalization planning
+
+2. **Spatial Information**:
+   - Mesh dimensions and boundaries
+   - Node distribution and connectivity
+   - Essential for graph construction
+
+3. **Temporal Dynamics**:
+   - Temperature evolution characteristics
+   - Convergence behavior
+   - Time-series patterns for model design
+
+4. **Graph Structure**:
+   - Node count and types
+   - Edge connectivity statistics
+   - Boundary condition distribution
+
+##### Example Output:
+```
+Analyzing HDF5 file: data/I=1500_T=25.hdf5
+File size: 124.35 MB
+
+Found 6 datasets:
+  - node_pos
+  - temperature
+  - k
+  - node_types
+  - edge_src
+  - edge_dst
+
+Analyzing dataset: temperature
+  Shape: (121, 5361, 1), dtype: float32
+  Global statistics (entire dataset in this file):
+    Min: 25.000000, Max: 85.234567
+    Mean: 45.678901, Std: 12.345678
+    NaN count: 0, Outliers: 42
+
+Analyzing dataset: node_types
+  Node type distribution:
+    Type 0 (interior node): 4829 nodes (90.08%)
+    Type 1 (boundary node): 456 nodes (8.51%)
+    Type 2 (interface/special material node): 76 nodes (1.42%)
+```
+
+##### Integration with Pipeline:
+
+The metadata generated by this script is used by:
+- `preprocess_gis_to_pyg.py`: To understand data structure for graph conversion
+- `normalizer.py`: To determine normalization parameters
+- `model.py`: To configure input/output dimensions
+- Diagnostic scripts: To validate data integrity
 
 ### Step 3: Data Preprocessing
-**Script:** `preprocess_gis_to_pyg.py`
-- Converts GIS data to PyTorch Geometric (PyG) format
-- Prepares graph representations from spatial data
-- Internally runs `train_val_test_split.py` to generate:
-  - Training set
-  - Validation set
-  - Test set
+**Main Script:** `preprocess_gis_to_pyg.py`
+
+This script converts raw HDF5 data to PyTorch Geometric format and prepares train/validation/test splits:
+
+#### Functionality:
+- Converts CFD mesh data to graph representations
+- Transforms spatial data into PyG-compatible format
+- Calls `train_val_test_split.py` to generate data splits
+- Creates graph structures with node features and edge indices
+
+#### Subprocess: `train_val_test_split.py`
+
+This script generates a carefully designed train/validation/test split strategy for the dataset:
+
+##### Split Strategy:
+
+1. **Sample-Level Split** (Coarse-grained):
+   - Total samples: 10 (S000 through S009)
+   - **Training samples**: 8 samples (80%)
+   - **Test samples**: 2 samples (20%)
+   - Random selection with fixed seed for reproducibility
+   - Ensures complete isolation of test data at the simulation level
+
+2. **Timestep-Level Split** (Fine-grained for training samples):
+   - Total timesteps per sample: 120 (after dropping initial timestep)
+   - **Training timesteps**: 108 timesteps (90%)
+   - **Validation timesteps**: 12 timesteps (10%)
+   - Random selection ensures temporal diversity in validation
+   - No overlap between training and validation timesteps
+
+##### Key Features:
+
+1. **Hierarchical Splitting**:
+   ```
+   Dataset (10 samples × 120 timesteps)
+   ├── Train Set (8 samples)
+   │   ├── Train Timesteps (108 per sample)
+   │   └── Val Timesteps (12 per sample)
+   └── Test Set (2 samples)
+       └── All Timesteps (120 per sample)
+   ```
+
+2. **Reproducibility**:
+   - Fixed random seed (default: 42)
+   - Deterministic sample and timestep selection
+   - Consistent splits across different runs
+
+3. **Data Isolation**:
+   - Test samples never seen during training
+   - Validation timesteps provide temporal generalization check
+   - Prevents data leakage between splits
+
+##### Output Format:
+
+Generates `processed_data/train_val_test_split.json`:
+```json
+{
+  "protocol": "8_train_2_test_random_val_10pct",
+  "seed": 42,
+  "train_ids": ["S000", "S001", "S002", "S003", "S004", "S005", "S006", "S007"],
+  "test_ids": ["S008", "S009"],
+  "val_time_idx": [3, 15, 27, 39, 48, 56, 67, 78, 89, 95, 103, 115],
+  "train_time_idx": [0, 1, 2, 4, 5, 6, ..., 117, 118, 119]
+}
+```
+
+##### Usage:
+
+**Standalone Execution**:
+```bash
+# Generate default split
+python train_val_test_split.py
+
+# Output:
+# Split saved to: processed_data/train_val_test_split.json
+# 
+# TRAIN/VAL/TEST SPLIT SUMMARY
+# ============================================================
+# Protocol: 8_train_2_test_random_val_10pct
+# Random seed: 42
+# 
+# Sample-level split:
+#   Train samples: 8 - ['S000', 'S001', 'S002', ...]
+#   Test samples: 2 - ['S008', 'S009']
+# 
+# Timestep-level split (for train samples):
+#   Train timesteps: 108 indices
+#   Val timesteps: 12 indices
+```
+
+**Programmatic Usage** (called by preprocess_gis_to_pyg.py):
+```python
+from train_val_test_split import generate_train_val_test_split
+
+# Generate split with custom parameters
+split = generate_train_val_test_split(
+    num_samples=10,
+    num_train=8,
+    num_test=2,
+    num_timesteps=120,
+    val_percentage=0.1,
+    seed=42
+)
+```
+
+##### Split Statistics:
+
+| Split Type | Samples | Timesteps | Total Data Points | Percentage |
+|------------|---------|-----------|-------------------|------------|
+| Training   | 8       | 108 each  | 864 snapshots     | 72%        |
+| Validation | 8       | 12 each   | 96 snapshots      | 8%         |
+| Test       | 2       | 120 each  | 240 snapshots     | 20%        |
+| **Total**  | **10**  | **120**   | **1200 snapshots**| **100%**   |
+
+##### Validation Strategy:
+
+The split design enables multiple validation approaches:
+
+1. **Temporal Validation**: 
+   - Random timesteps from training simulations
+   - Tests model's ability to predict unseen time points
+   - Useful for interpolation tasks
+
+2. **Simulation Validation**:
+   - Entirely unseen simulations in test set
+   - Tests generalization to new operating conditions
+   - Critical for extrapolation capabilities
+
+3. **Cross-Validation Ready**:
+   - Can easily modify seed for different splits
+   - Supports k-fold validation at sample level
+   - Enables robust performance estimation
+
+##### Integration with Pipeline:
+
+The split file is used by:
+- `normalizer.py`: Computes statistics only on training data
+- `train.py`: Loads appropriate data subsets for training
+- `test.py`: Evaluates on completely unseen test simulations
+- Data loaders: Ensure proper data isolation during training
+
+##### Best Practices:
+
+1. **Fixed Seed**: Always use the same seed for reproducible research
+2. **No Data Leakage**: Test samples are never used for normalization
+3. **Balanced Validation**: Random timestep selection ensures temporal diversity
+4. **Scalable Design**: Easy to adjust split ratios for different dataset sizes
 
 ### Step 4: Data Normalization
 **Script:** `normalizer.py`
