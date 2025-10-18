@@ -1,6 +1,6 @@
-# Graph Heat Project
+# Graph Heat Project (https://medium.com/p/cdafe3af0eb2)
 
-A machine learning project for analyzing and predicting heat distribution using graph neural networks on CFD (Computational Fluid Dynamics) data.
+A machine learning project for analyzing and predicting heat distribution using graph neural networks on CFD (Computational Fluid Dynamics) data. 
 
 ## Project Overview
 
